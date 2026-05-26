@@ -16,7 +16,7 @@ global.currentPickCount = 0;
 global.excludeTypes = []; // loại task không muốn pick
 global.knownTaskIds = new Set(); // track task đã thấy
 
-const waitingForCookie = {};a
+const waitingForCookie = {};
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
 function getHeaders() {
