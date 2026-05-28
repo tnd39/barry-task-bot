@@ -119,24 +119,66 @@ async function getDoneTasks() {
 
 // ===== API: PICK TASK (assign to me) =====
 async function pickTask(taskId) {
-  // Dùng endpoint assignees như website thật
-  const tries = [
-    () => axios.post(`${BASE_URL}/api/v1/tasks/${taskId}/assignees`,
-      { assignee_id: ASSIGNEE_ID },
-      { headers: getHeaders() }
-    ),
-    () => axios.post(`${BASE_URL}/api/v1/tasks/${taskId}/assign-to-me`, {},
-      { headers: getHeaders() }
-    ),
+  const endpoints = [
+    // Endpoint 1: POST /assignees với format ĐÚNG từ network
+    async () => {
+      const res = await axios.post(
+        `${BASE_URL}/api/v1/tasks/${taskId}/assignees`,
+        { assignees: [{ user_id: ASSIGNEE_ID }] },
+        { headers: getHeaders() }
+      );
+      return res;
+    },
+    // Endpoint 2: POST /assignees với assignee_id
+    async () => {
+      const res = await axios.post(
+        `${BASE_URL}/api/v1/tasks/${taskId}/assignees`,
+        { assignee_id: ASSIGNEE_ID },
+        { headers: getHeaders() }
+      );
+      return res;
+    },
+    // Endpoint 3: PUT /assignees
+    async () => {
+      const res = await axios.put(
+        `${BASE_URL}/api/v1/tasks/${taskId}/assignees`,
+        { user_id: ASSIGNEE_ID },
+        { headers: getHeaders() }
+      );
+      return res;
+    },
+    // Endpoint 4: PATCH task trực tiếp
+    async () => {
+      const res = await axios.patch(
+        `${BASE_URL}/api/v1/tasks/${taskId}`,
+        { assignee_ids: [ASSIGNEE_ID] },
+        { headers: getHeaders() }
+      );
+      return res;
+    },
+    // Endpoint 5: assign-to-me
+    async () => {
+      const res = await axios.post(
+        `${BASE_URL}/api/v1/tasks/${taskId}/assign-to-me`,
+        {},
+        { headers: getHeaders() }
+      );
+      return res;
+    },
   ];
-  for (const fn of tries) {
+
+  for (const fn of endpoints) {
     try {
       const res = await fn();
       if (res.status >= 200 && res.status < 300) {
         global.currentPickCount++;
+        console.log(`✅ Pick task ${taskId} thành công! Status: ${res.status}`);
         return res.data;
       }
-    } catch (e) { continue; }
+    } catch (e) {
+      console.log(`❌ Endpoint thất bại: ${e.response?.status} ${e.message}`);
+      continue;
+    }
   }
   return null;
 }
